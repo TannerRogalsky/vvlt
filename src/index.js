@@ -1,12 +1,13 @@
 import Peer from 'simple-peer';
 import render from './view';
+import store, { setUserId, fetchRooms } from './store.tsx';
 
 const reactAnchor = document.createElement('div');
 document.body.appendChild(reactAnchor);
-let state = {
-	user_id: null,
-};
-render(state, reactAnchor);
+render(reactAnchor);
+
+// they'd rather we do this in the component
+store.dispatch(fetchRooms());
 
 async function run() {
 	const signalingChannel = await new Promise(function(resolve, reject) {
@@ -40,12 +41,11 @@ async function run() {
 		if (msg.simple_peer_signal) {
 			peerConnection.signal(msg.simple_peer_signal);
 		} else if (typeof(msg) == "number") {
-			state.user_id = msg;
-			render(state, reactAnchor);
+			store.dispatch(setUserId(msg));
 
 			const isHost = msg % 2 == 0;
 			peerConnection = new Peer({ initiator: isHost });
-			console.log("IS HOST", isHost, peerConnection);
+			console.log("IS HOST", isHost);
 			peerConnection.on('signal', data => {
 				signalingChannel.send(JSON.stringify({simple_peer_signal: data}));
 			});

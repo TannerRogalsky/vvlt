@@ -50,11 +50,22 @@ module.exports = {
     }) 
   ],
 
+  resolve: {
+    extensions: [ '.tsx', '.ts', '.js' ],
+  },
+
   // Determine how modules within the project are treated
   module: {
     rules: [
+      // Typescript
+      {
+        test: /\.(tsx|js)?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+
       // JavaScript: Use Babel to transpile JavaScript files
-      {test: /\.js$/, exclude: /node_modules/, use: ['babel-loader']},
+      // {test: /\.js$/, exclude: /node_modules/, use: ['babel-loader']},
 
       // Images: Copy image files to build folder
       {test: /\.(?:ico|gif|png|jpg|jpeg)$/i, type: 'asset/resource'},
