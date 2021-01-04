@@ -10,6 +10,7 @@ import { Provider } from 'react-redux';
 
 import store from './store';
 import Home from './views/home';
+import Game from './views/game';
 
 
 export default function render(container) {
@@ -53,16 +54,6 @@ function App() {
 				</div>
 			</Router>
 		</Provider>
-	);
-}
-
-
-function Game(state) {
-	console.log(state);
-	return (
-		<div>
-			{state.rooms[state.active_room].name}
-		</div>
 	);
 }
 

@@ -59,7 +59,7 @@ module.exports = {
     rules: [
       // Typescript
       {
-        test: /\.(tsx|js)?$/,
+        test: /\.(ts|tsx|js)?$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },

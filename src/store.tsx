@@ -1,65 +1,85 @@
 import { configureStore, createSlice, createAsyncThunk, PayloadAction, getDefaultMiddleware } from '@reduxjs/toolkit';
+import socketMiddleware, { wsMessage } from './stores/websocket';
+import peerMiddleware from './stores/peer';
+
+export interface User {
+	id: string,
+}
 
 export interface Room {
 	name: string,
+	id: string,
+	host: User,
+	peer?: User,
 }
 
 export interface State {
-	user_id?: number,
 	rooms: Array<Room>,
-	active_room?: number,
+	active_room?: string,
+}
+
+interface AllRoomsPayload {
+	rooms: Array<Room>
+}
+
+interface CreateRoomPayload {
+	room: Room,
+}
+
+interface RemovedRoomPayload {
+	room_id: string,
+}
+
+interface JoinedRoomPayload {
+	room_id: string,	
 }
 
 const DEFAULT_STATE: State = {
-	user_id: null,
 	rooms: [],
 	active_room: null,
 };
-
-export const fetchRooms = createAsyncThunk('GET_ROOMS', async () => {
-	let response = await fetch('room');
-	return await response.json();
-});
-
-export const createRoom = createAsyncThunk('CREATE_ROOM', async () => {
-	let response = await fetch('room', { method: 'POST', body: JSON.stringify({}) });
-	return await response.json();
-});
 
 const rootSlice = createSlice({
 	name: 'root',
 	initialState: DEFAULT_STATE,
 	reducers: {
-		addRoom(state, action: PayloadAction<Room>) {
+		AllRooms(state, action: PayloadAction<AllRoomsPayload>) {
 			return Object.assign({}, state, {
-				rooms: state.rooms.concat(action.payload)
+				rooms: action.payload.rooms
 			});
 		},
-		setRooms(state, action: PayloadAction<Array<Room>>) {
-			return Object.assign({}, state, {
-				rooms: action.payload
-			});
+		CreatedRoom(state, action: PayloadAction<CreateRoomPayload>) {
+			return { ...state, rooms: state.rooms.concat(action.payload.room) }
 		},
-		setUserId(state, action: PayloadAction<number>) {
-			return Object.assign({}, state, {
-				user_id: action.payload,
-			});
+		RemovedRoom(state, action: PayloadAction<RemovedRoomPayload>) {
+			return { 
+				...state, 
+				rooms: state.rooms.filter((room) => {
+					return room.id !== action.payload.room_id;
+				}), 
+				active_room: state.active_room == action.payload.room_id ? null : state.active_room
+			}
+		},
+		JoinedRoom(state, action: PayloadAction<JoinedRoomPayload>) {
+			return { ...state, active_room: action.payload.room_id }
 		}
 	},
 	extraReducers(builder) {
-		builder.addCase(fetchRooms.fulfilled, (state, action) => {
-			return { ...state, rooms: action.payload };
-		});
-		builder.addCase(createRoom.fulfilled, (state, action) => {
-			return { 
-				...state, 
-				rooms: state.rooms.concat(action.payload), 
-				active_room: state.rooms.length 
-			};
-		});
+		// builder.addCase(createRoom.fulfilled, (state, action) => {
+		// 	return { 
+		// 		...state, 
+		// 		rooms: state.rooms.concat(action.payload), 
+		// 		active_room: state.rooms.length 
+		// 	};
+		// });
 	}
 })
 
-export const { addRoom, setRooms, setUserId, } = rootSlice.actions;
-export default configureStore({ reducer: rootSlice.reducer });
+const middleware = [socketMiddleware, peerMiddleware, ...getDefaultMiddleware()];
+
+export const { AllRooms, CreatedRoom, RemovedRoom, JoinedRoom } = rootSlice.actions;
+export default configureStore({ 
+	reducer: rootSlice.reducer,
+	middleware: middleware,
+});
 
