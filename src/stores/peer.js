@@ -40,7 +40,7 @@ const peerMiddleware = () => {
 
   const onError = store => event => {
     console.log("p2p", "onError");
-    store.dispatch(wsSend({ LeaveRoom: true }))
+    store.dispatch(wsSend('LeaveRoom'));
   }
 
   const onData = store => (event) => {
