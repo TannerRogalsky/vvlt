@@ -7,7 +7,7 @@ document.body.appendChild(reactAnchor);
 render(reactAnchor);
 
 if (process.env.NODE_ENV !== 'production') {
-	store.dispatch(wsConnect({ host: 'wss://salty-mesa-40253.herokuapp.com/connect' }));
-} else { 
 	store.dispatch(wsConnect({ host: 'ws://localhost:8080/connect' }));
+} else { 
+	store.dispatch(wsConnect({ host: 'wss://salty-mesa-40253.herokuapp.com/connect' }));
 }
