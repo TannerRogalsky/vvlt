@@ -20,7 +20,7 @@ export default function render(container) {
 function App() {
 	return (
 		<Provider store={store}>
-			<Router>
+			<Router basename="/vvlt">
 				<div>
 					<ul>
 						<li>
