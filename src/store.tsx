@@ -14,6 +14,7 @@ export interface Room {
 }
 
 export interface State {
+	user_id?: string,
 	rooms: Array<Room>,
 	active_room?: string,
 }
@@ -34,7 +35,12 @@ interface JoinedRoomPayload {
 	room_id: string,	
 }
 
+interface SetIDPayload {
+	user_id: string,
+}
+
 const DEFAULT_STATE: State = {
+	user_id: null,
 	rooms: [],
 	active_room: null,
 };
@@ -62,7 +68,10 @@ const rootSlice = createSlice({
 		},
 		JoinedRoom(state, action: PayloadAction<JoinedRoomPayload>) {
 			return { ...state, active_room: action.payload.room_id }
-		}
+		},
+		SetID(state, action: PayloadAction<SetIDPayload>) {
+			return { ...state, user_id: action.payload.user_id }
+		},
 	},
 	extraReducers(builder) {
 		// builder.addCase(createRoom.fulfilled, (state, action) => {
@@ -77,7 +86,7 @@ const rootSlice = createSlice({
 
 const middleware = [socketMiddleware, peerMiddleware, ...getDefaultMiddleware()];
 
-export const { AllRooms, CreatedRoom, RemovedRoom, JoinedRoom } = rootSlice.actions;
+export const { AllRooms, CreatedRoom, RemovedRoom, JoinedRoom, SetID } = rootSlice.actions;
 export default configureStore({ 
 	reducer: rootSlice.reducer,
 	middleware: middleware,

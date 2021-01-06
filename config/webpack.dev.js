@@ -15,13 +15,13 @@ module.exports = merge(common, {
   devServer: {
     historyApiFallback: true,
     contentBase: paths.build,
-    open: true,
+    // open: true,
     compress: true,
     hot: true,
     port: 8080,
 
     proxy: [{
-      context: ['/user', '/room', '/rooms', '/connect'],
+      context: ['/connect'],
       target: 'http://localhost:5000',
       ws: true,
     }]

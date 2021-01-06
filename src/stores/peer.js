@@ -11,7 +11,11 @@ export const p2pConnecting = createAction('P2P_CONNECTING');
 export const p2pConnected = createAction('P2P_CONNECTED');
 export const p2pDisconnect = createAction('P2P_DISCONNECT');
 export const p2pMessage = createAction('P2P_MESSAGE');
-export const p2pSend = createAction('P2P_NEW_MESSAGE');
+export const p2pSend = createAction('P2P_NEW_MESSAGE', function prepare(any) {
+  return {
+    payload: any
+  };
+});
 export const p2pSignal = createAction('P2P_SIGNAL', function prepare(any) {
   return any;
 });
@@ -22,7 +26,6 @@ const peerMiddleware = () => {
   const onConnect = store => () => {
     console.log("p2p", "onConnect");
     store.dispatch(p2pConnected());
-    store.dispatch(p2pSend({ hello: "my boys" }))
   };
 
   const onClose = store => () => {
@@ -73,8 +76,8 @@ const peerMiddleware = () => {
         // console.log('websocket closed');
         break;
       case 'P2P_NEW_MESSAGE':
-        // console.log('sending a message', action.payload.msg);
-        peerConnection.send(JSON.stringify(action.payload.msg));
+        console.log('sending a message', action);
+        peerConnection.send(action.payload);
         break;
       case 'P2P_SIGNAL':
         console.log(action);

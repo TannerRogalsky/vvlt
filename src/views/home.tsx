@@ -3,6 +3,7 @@ import { connect, useDispatch } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import { useHistory } from 'react-router-dom';
 
+import Game from './game';
 import store, { State, Room, } from '../store';
 import { wsSend } from '../stores/websocket';
 import { p2pConnect } from '../stores/peer';
@@ -52,11 +53,7 @@ export default connect(
 
 	if (active_room) {
 		let room = rooms.find((room) => room.id == active_room);
-		return (
-			<div>
-				{room.name}
-			</div>
-		);
+		return <Game room={room} />;
 	} else {
 		return (
 			<div className={classes.root} >
