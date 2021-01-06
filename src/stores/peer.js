@@ -61,6 +61,7 @@ const peerMiddleware = () => {
 
   const onError = store => event => {
     console.log("p2p", "onError");
+    store.dispatch(p2pDisconnect());
     store.dispatch(wsSend('LeaveRoom'));
   }
 
@@ -86,14 +87,14 @@ const peerMiddleware = () => {
         peerConnection.on('error', onError(store));
         peerConnection.on('data', onData(store));
 
-        break;
+        return next(action);
       case 'P2P_DISCONNECT':
         if (peerConnection !== null) {
           peerConnection.destroy();
         }
         peerConnection = null;
         // console.log('websocket closed');
-        break;
+        return next(action);
       case 'P2P_NEW_MESSAGE':
         peerConnection.send(action.payload);
         break;

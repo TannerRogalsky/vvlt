@@ -1,6 +1,6 @@
 import { configureStore, createSlice, createAsyncThunk, PayloadAction, getDefaultMiddleware } from '@reduxjs/toolkit';
 import socketMiddleware, { wsMessage } from './stores/websocket';
-import peerMiddleware from './stores/peer';
+import peerMiddleware, { p2pConnected, p2pConnect, p2pDisconnect } from './stores/peer';
 
 export interface User {
 	id: string,
@@ -13,10 +13,18 @@ export interface Room {
 	peer?: User,
 }
 
+export enum ConnectionState {
+	NotConnected,
+	Connecting,
+	Connected,
+	Error,
+}
+
 export interface State {
 	user_id?: string,
 	rooms: Array<Room>,
 	active_room?: string,
+	p2p_connection_state: ConnectionState,
 }
 
 interface AllRoomsPayload {
@@ -43,6 +51,7 @@ const DEFAULT_STATE: State = {
 	user_id: null,
 	rooms: [],
 	active_room: null,
+	p2p_connection_state: ConnectionState.NotConnected,
 };
 
 const rootSlice = createSlice({
@@ -74,13 +83,24 @@ const rootSlice = createSlice({
 		},
 	},
 	extraReducers(builder) {
-		// builder.addCase(createRoom.fulfilled, (state, action) => {
-		// 	return { 
-		// 		...state, 
-		// 		rooms: state.rooms.concat(action.payload), 
-		// 		active_room: state.rooms.length 
-		// 	};
-		// });
+		builder.addCase(p2pConnected, (state, action) => {
+			return { 
+				...state, 
+				p2p_connection_state: ConnectionState.Connected
+			};
+		});
+		builder.addCase(p2pConnect, (state, action) => {
+			return { 
+				...state, 
+				p2p_connection_state: ConnectionState.Connecting
+			};
+		});
+		builder.addCase(p2pDisconnect, (state, action) => {
+			return { 
+				...state, 
+				p2p_connection_state: ConnectionState.NotConnected
+			};
+		});
 	}
 })
 
