@@ -17,7 +17,6 @@ export enum ConnectionState {
 	NotConnected,
 	Connecting,
 	Connected,
-	Error,
 }
 
 export interface State {

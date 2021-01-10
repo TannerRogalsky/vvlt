@@ -40,6 +40,9 @@ const peerMiddleware = () => {
   let vvlt = null;
   let isHost = null;
   let raf = null;
+  let step = null;
+
+  let currentFrame = 0;
 
   const onConnect = store => () => {
     console.log("p2p", "onConnect");
@@ -66,7 +69,10 @@ const peerMiddleware = () => {
   }
 
   const onData = store => (data) => {
-    vvlt.handle_remote_input(data);
+    let response = vvlt.handle_remote_input(data, performance.now());
+    if (response) {
+      peerConnection.send(response);
+    }
   }
 
   // the middleware part of this function
@@ -77,7 +83,6 @@ const peerMiddleware = () => {
           peerConnection.destroy();
         }
 
-        console.log('P2P_CONNECT', action.payload);
         // connect to the remote host
         peerConnection = new Peer({ initiator: action.payload });
         isHost = action.payload;
@@ -105,6 +110,7 @@ const peerMiddleware = () => {
         let canvas = action.payload;
         if (canvas === null) {
           cancelAnimationFrame(raf);
+          clearInterval(step);
           break;
         }
 
@@ -114,7 +120,6 @@ const peerMiddleware = () => {
         vvlt = new VvltClient(isHost);
 
         document.addEventListener('keydown', (event) => {
-          event.preventDefault();
           let input = null;
           switch (event.key) {
             case 'ArrowUp':
@@ -134,12 +139,12 @@ const peerMiddleware = () => {
               break;
           }
           if (input) {
-            store.dispatch(p2pSend(input))
+            event.preventDefault();
+            peerConnection.send(input);
           }
         });
 
         document.addEventListener('keyup', (event) => {
-          event.preventDefault();
           let input = null;
           switch (event.key) {
             case 'ArrowUp':
@@ -159,16 +164,37 @@ const peerMiddleware = () => {
               break;
           }
           if (input) {
-            store.dispatch(p2pSend(input))
+            event.preventDefault();
+            peerConnection.send(input);
           }
         });
 
         const loop = (time) => {
-          vvlt.step();
-          vvlt.render(renderer);
+          renderer.render(vvlt);
           raf = requestAnimationFrame(loop);
         }
         raf = requestAnimationFrame(loop);
+
+        const FRAME_TIME_MS = 16;
+        step = setInterval(() => {
+          const hashMsg = vvlt.needs_hash();
+          if (hashMsg) {
+            peerConnection.send(hashMsg);
+          }
+          const pingMsg = vvlt.needs_ping(performance.now());
+          if (pingMsg) {
+            peerConnection.send(pingMsg);
+          }
+
+          const est_remote_frame = vvlt.estimated_remote_frame();
+          // allow at least 10 frames of flex
+          const latency = Math.max(vvlt.latency_ms(), FRAME_TIME_MS * 10);
+          const frame_latency = (latency * 2) / (FRAME_TIME_MS);
+          const remote_frame = est_remote_frame + frame_latency;
+          if (remote_frame >= currentFrame) {
+            currentFrame = vvlt.step();
+          }
+        }, FRAME_TIME_MS);
         break;
       default:
         // console.log('the next action:', action);
