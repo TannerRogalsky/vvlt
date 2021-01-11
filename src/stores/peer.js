@@ -34,15 +34,24 @@ export const newCanvas = createAction('NEW_GAME_CANVAS', function prepare(any) {
     payload: any
   };
 });
+export const newDebugCanvas = createAction('NEW_DEBUG_CANVAS', function prepare(any) {
+  return {
+    payload: any
+  };
+});
 
 const peerMiddleware = () => {
   let peerConnection = null;
   let vvlt = null;
   let isHost = null;
+  let canvas = null;
   let raf = null;
   let step = null;
 
   let currentFrame = 0;
+  let hashesSent = 0;
+
+  let debugRaf = null;
 
   const onConnect = store => () => {
     console.log("p2p", "onConnect");
@@ -84,7 +93,10 @@ const peerMiddleware = () => {
         }
 
         // connect to the remote host
-        peerConnection = new Peer({ initiator: action.payload });
+        peerConnection = new Peer({ 
+          initiator: action.payload,
+          // trickle: false
+        });
         isHost = action.payload;
 
         peerConnection.on('signal', onSignal(store));
@@ -106,8 +118,37 @@ const peerMiddleware = () => {
       case 'P2P_SIGNAL':
         peerConnection.signal(JSON.parse(action.payload))
         break;
+      case 'NEW_DEBUG_CANVAS':
+        const debugCanvas = action.payload;
+        if (debugCanvas === null) {
+          cancelAnimationFrame(debugRaf);
+          break;
+        }
+
+        const debugCtx = debugCanvas.getContext('2d');
+        const X = 3;
+        const FONT_SIZE = 16;
+        const debugLoop = (t) => {
+          let y = 0;
+          debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+          debugCtx.font = `${FONT_SIZE}px serif`;
+          debugCtx.fillText(`Latency (ms): ${vvlt.latency_ms()}`, X, y += FONT_SIZE);
+          debugCtx.fillText(`Local Frame: ${currentFrame}`, X, y += FONT_SIZE);
+          debugCtx.fillText(`Remote Frame: ${vvlt.estimated_remote_frame()}`, X, y += FONT_SIZE);
+          debugCtx.fillText(`Synced Frame: ${vvlt.last_synchronized()}`, X, y += FONT_SIZE);
+          debugCtx.fillText(`Hashes Sent: ${hashesSent}`, X, y += FONT_SIZE);
+
+          debugRaf = requestAnimationFrame(debugLoop);
+        }
+        debugRaf = requestAnimationFrame(debugLoop);
+
+        break;
       case 'NEW_GAME_CANVAS':
-        let canvas = action.payload;
+        if (canvas) {
+          break;
+        }
+
+        canvas = action.payload;
         if (canvas === null) {
           cancelAnimationFrame(raf);
           clearInterval(step);
@@ -117,7 +158,7 @@ const peerMiddleware = () => {
         const settings = new RendererSettings(canvas, player1Image, enemy1Image);
         const renderer = new Renderer(settings);
         renderer.set_width_height(512, 512);
-        vvlt = new VvltClient(isHost);
+        vvlt = new VvltClient(isHost, 0);
 
         document.addEventListener('keydown', (event) => {
           let input = null;
@@ -179,6 +220,7 @@ const peerMiddleware = () => {
         step = setInterval(() => {
           const hashMsg = vvlt.needs_hash();
           if (hashMsg) {
+            hashesSent += 1;
             peerConnection.send(hashMsg);
           }
           const pingMsg = vvlt.needs_ping(performance.now());

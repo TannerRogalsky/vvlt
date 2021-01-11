@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
 // @ts-ignore
-import { newCanvas } from '../stores/peer';
+import { newCanvas, newDebugCanvas } from '../stores/peer';
 import { State, Room, ConnectionState } from '../store';
 
 interface PassedProps {
@@ -28,6 +28,24 @@ export default connect(
 	const refCallback = (canvas: HTMLCanvasElement) => {
 		dispatch(newCanvas(canvas));
 	}
+	const debugRefCallback = (canvas: HTMLCanvasElement) => {
+		dispatch(newDebugCanvas(canvas))
+	}
+
+	const [debug, setDebug] = useState(true);
+	const toggleDebug = (e: any) => {
+		setDebug(e.target.checked);
+	}
+
+	const parentStyle = {
+		position: 'relative',
+	} as React.CSSProperties;
+
+	const overlayStyle = {
+		position: 'absolute',
+		left: 0,
+		top: 0,
+	} as React.CSSProperties;
 
 	switch (connection_state) {
 		case ConnectionState.NotConnected: 
@@ -40,8 +58,21 @@ export default connect(
 		case ConnectionState.Connected:
 			return (
 				<div>
-					{room.name}
-					<canvas width={512} height={512} ref={refCallback} />
+					<div>{room.name}</div>
+					<div style={parentStyle} >
+						<canvas width={512} height={512} ref={refCallback} />
+						{
+							debug ?
+								<canvas style={overlayStyle} width={512} height={512} ref={debugRefCallback} /> :
+								<></>
+						}
+					</div>
+					<div>
+						<label>
+							<input onChange={toggleDebug} type="checkbox" checked={debug} />
+							Debug: {debug ? 'true' : 'false' }
+						</label>
+					</div>
 				</div>
 			);
 	}
