@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { connect, useDispatch } from 'react-redux';
-// @ts-ignore
 import { newCanvas, newDebugCanvas } from '../stores/peer';
 import { State, Room, ConnectionState } from '../store';
 

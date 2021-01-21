@@ -1,13 +1,16 @@
+import { Middleware, MiddlewareAPI, Dispatch, AnyAction } from 'redux';
 import { createAction } from '@reduxjs/toolkit';
-import Peer from 'simple-peer';
+import Peer, { Instance } from 'simple-peer';
 import { wsSend } from './websocket';
 import { Renderer, RendererSettings, VvltClient } from 'vvlt';
+import { State } from '../store';
 
 import player1ImageSrc from '../../../../../rust/vult/resources/images/playerShip1_red.png';
 import enemy1ImageSrc from '../../../../../rust/vult/resources/images/enemyBlack1.png';
+// @ts-ignore
 import levelDataPath from '../../../../../rust/vult/resources/levels/level1.lvl';
 
-let levelData = null;
+let levelData: null | Uint8Array = null;
 fetch(levelDataPath).then(r => r.arrayBuffer()).then(r => levelData = new Uint8Array(r));
 
 const player1Image = new Image();
@@ -16,58 +19,48 @@ player1Image.src = player1ImageSrc;
 const enemy1Image = new Image();
 enemy1Image.src = enemy1ImageSrc;
 
-export const p2pConnect = createAction('P2P_CONNECT', function prepare(any) {
-  return {
-    payload: any
-  }
-});
+function withPayloadType<T>() {
+  return (t: T) => ({ payload: t })
+}
+
+export const p2pConnect = createAction('P2P_CONNECT', withPayloadType<boolean>());
 export const p2pConnecting = createAction('P2P_CONNECTING');
 export const p2pConnected = createAction('P2P_CONNECTED');
 export const p2pDisconnect = createAction('P2P_DISCONNECT');
 export const p2pMessage = createAction('P2P_MESSAGE');
-export const p2pSend = createAction('P2P_NEW_MESSAGE', function prepare(any) {
-  return {
-    payload: any
-  };
-});
+export const p2pSend = createAction('P2P_NEW_MESSAGE', withPayloadType<any>());
 export const p2pSignal = createAction('P2P_SIGNAL', function prepare(any) {
   return any;
 });
-export const newCanvas = createAction('NEW_GAME_CANVAS', function prepare(any) {
-  return {
-    payload: any
-  };
-});
-export const newDebugCanvas = createAction('NEW_DEBUG_CANVAS', function prepare(any) {
-  return {
-    payload: any
-  };
-});
+export const newCanvas = createAction('NEW_GAME_CANVAS', withPayloadType<HTMLCanvasElement>());
+export const newDebugCanvas = createAction('NEW_DEBUG_CANVAS', withPayloadType<HTMLCanvasElement>());
 
-const peerMiddleware = () => {
-  let peerConnection = null;
-  let vvlt = null;
-  let isHost = null;
-  let canvas = null;
-  let raf = null;
-  let step = null;
+const peerMiddleware: () => Middleware<{}, State> = () => {
+  let peerConnection: null | Instance = null;
+  let vvlt: null | VvltClient = null;
+  let isHost: null | boolean = null;
+  let canvas: null | HTMLCanvasElement = null;
+  let raf: null | number = null;
+  let step: null | number = null;
 
   let currentFrame = 0;
   let hashesSent = 0;
 
-  let debugRaf = null;
+  let debugRaf: null | number = null;
 
-  const onConnect = store => () => {
+  type Store = MiddlewareAPI<Dispatch<AnyAction>, State>;
+
+  const onConnect = (store: Store) => () => {
     console.log("p2p", "onConnect");
     store.dispatch(p2pConnected());
   };
 
-  const onClose = store => () => {
+  const onClose = (store: Store) => () => {
     console.log("p2p", "onClose");
     store.dispatch(p2pDisconnect());
   };
 
-  const onSignal = store => (event) => {
+  const onSignal = (store: Store) => (event: any) => {
     store.dispatch(wsSend({
       Signal: {
         payload: JSON.stringify(event),
@@ -75,13 +68,13 @@ const peerMiddleware = () => {
     }));
   };
 
-  const onError = store => event => {
+  const onError = (store: Store) => () => {
     console.log("p2p", "onError");
     store.dispatch(p2pDisconnect());
     store.dispatch(wsSend('LeaveRoom'));
   }
 
-  const onData = store => (data) => {
+  const onData = (store: Store) => (data: Uint8Array) => {
     let response = vvlt.handle_remote_input(data, performance.now());
     if (response) {
       peerConnection.send(response);
@@ -132,7 +125,7 @@ const peerMiddleware = () => {
         const debugCtx = debugCanvas.getContext('2d');
         const X = 3;
         const FONT_SIZE = 16;
-        const debugLoop = (t) => {
+        const debugLoop = (t: DOMHighResTimeStamp) => {
           let y = 0;
           debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
           debugCtx.font = `${FONT_SIZE}px serif`;
@@ -213,14 +206,14 @@ const peerMiddleware = () => {
           }
         });
 
-        const loop = (time) => {
+        const loop = (time: DOMHighResTimeStamp) => {
           renderer.render(vvlt);
           raf = requestAnimationFrame(loop);
         }
         raf = requestAnimationFrame(loop);
 
         const FRAME_TIME_MS = 16;
-        step = setInterval(() => {
+        step = window.setInterval(() => {
           const hashMsg = vvlt.needs_hash();
           if (hashMsg) {
             hashesSent += 1;
