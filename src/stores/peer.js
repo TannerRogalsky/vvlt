@@ -5,6 +5,10 @@ import { Renderer, RendererSettings, VvltClient } from 'vvlt';
 
 import player1ImageSrc from '../../../../../rust/vult/resources/images/playerShip1_red.png';
 import enemy1ImageSrc from '../../../../../rust/vult/resources/images/enemyBlack1.png';
+import levelDataPath from '../../../../../rust/vult/resources/levels/level1.lvl';
+
+let levelData = null;
+fetch(levelDataPath).then(r => r.arrayBuffer()).then(r => levelData = new Uint8Array(r));
 
 const player1Image = new Image();
 player1Image.src = player1ImageSrc;
@@ -155,10 +159,9 @@ const peerMiddleware = () => {
           break;
         }
 
+        vvlt = new VvltClient(isHost, levelData);
         const settings = new RendererSettings(canvas, player1Image, enemy1Image);
-        const renderer = new Renderer(settings);
-        renderer.set_width_height(512, 512);
-        vvlt = new VvltClient(isHost, 0);
+        const renderer = new Renderer(settings, vvlt);
 
         document.addEventListener('keydown', (event) => {
           let input = null;

@@ -71,6 +71,8 @@ module.exports = {
 
       // Fonts and SVGs: Inline files
       {test: /\.(woff(2)?|eot|ttf|otf|svg|)$/, type: 'asset/inline'},
+
+      {test: /\.lvl$/i, exclude: /node_modules/, use: ['file-loader']},
     ],
   },
 

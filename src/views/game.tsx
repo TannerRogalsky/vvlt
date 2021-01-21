@@ -32,7 +32,7 @@ export default connect(
 		dispatch(newDebugCanvas(canvas))
 	}
 
-	const [debug, setDebug] = useState(true);
+	const [debug, setDebug] = useState(process.env.NODE_ENV !== 'production');
 	const toggleDebug = (e: any) => {
 		setDebug(e.target.checked);
 	}
@@ -45,6 +45,9 @@ export default connect(
 		position: 'absolute',
 		left: 0,
 		top: 0,
+		right: 0,
+		bottom: 0,
+		width: '100%',
 	} as React.CSSProperties;
 
 	switch (connection_state) {
@@ -56,14 +59,16 @@ export default connect(
 				</div>
 			);
 		case ConnectionState.Connected:
+			const width = 1920;
+			const height = 1080;
 			return (
 				<div>
 					<div>{room.name}</div>
 					<div style={parentStyle} >
-						<canvas width={512} height={512} ref={refCallback} />
+						<canvas style={overlayStyle} width={width} height={height} ref={refCallback} />
 						{
 							debug ?
-								<canvas style={overlayStyle} width={512} height={512} ref={debugRefCallback} /> :
+								<canvas style={overlayStyle} width={width} height={height} ref={debugRefCallback} /> :
 								<></>
 						}
 					</div>
