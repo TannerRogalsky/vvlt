@@ -1,33 +1,39 @@
+import { Middleware, MiddlewareAPI, Dispatch, AnyAction } from 'redux';
 import { createAction } from '@reduxjs/toolkit';
 import * as ACTIONS from '../store';
 import { p2pSignal } from '../stores/peer';
+
+function withPayloadType<T>() {
+  return (t: T) => ({ payload: t })
+}
 
 export const wsConnect = createAction('WS_CONNECT');
 export const wsConnecting = createAction('WS_CONNECTING');
 export const wsConnected = createAction('WS_CONNECTED');
 export const wsDisconnect = createAction('WS_DISCONNECT');
 export const wsMessage = createAction('WS_MESSAGE');
-export const wsSend = createAction('WS_NEW_MESSAGE', function prepare(any) {
-  return {
-    payload: any
-  }
-});
+export const wsSend = createAction('WS_NEW_MESSAGE', withPayloadType<any>());
 
-const socketMiddleware = () => {
-  let socket = null;
+type Store = MiddlewareAPI<Dispatch<AnyAction>, ACTIONS.State>;
 
-  const onOpen = store => (event) => {
-    store.dispatch(wsConnected(event.target.url));
+const socketMiddleware: () => Middleware<{}, ACTIONS.State> = () => {
+  let socket: WebSocket = null;
+
+  const onOpen = (store: Store) => (event: Event) => {
+    store.dispatch(wsConnected());
   };
 
-  const onClose = store => () => {
+  const onClose = (store: Store) => () => {
     store.dispatch(wsDisconnect());
   };
 
-  const onMessage = store => (event) => {
+  const onMessage = (store: Store) => (event: MessageEvent) => {
     const payload = JSON.parse(event.data);
-    if (typeof(ACTIONS[payload.type]) === "function") {
-        store.dispatch(ACTIONS[payload.type](payload.content));
+
+    // @ts-ignore
+    const maybeAction = ACTIONS[payload.type];
+    if (typeof(maybeAction) === "function") {
+        store.dispatch(maybeAction(payload.content));
     } else if (payload.type == "Signal") {
       store.dispatch(p2pSignal(payload.content));
     } else {
