@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://client/../rust/vult/pkg/vvlt.js"],"names":["wasm"],"mappings":"qpQAEAA","file":"774.c9628adeabd0f5dfbb6f.bundle.js","sourcesContent":["import * as wasm from \"./vvlt_bg.wasm\";\nexport * from \"./vvlt_bg.js\";\nwasm.__wbindgen_start();\n"],"sourceRoot":""}
