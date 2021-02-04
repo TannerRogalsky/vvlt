@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useHistory } from 'react-router-dom';
 
 import Game from './game';
-import store, { State, Room, } from '../store';
+import store, { State, Room, activeRoom } from '../store';
 import { wsSend } from '../stores/websocket';
 import { p2pConnect } from '../stores/peer';
 
@@ -20,12 +20,12 @@ const useStyles = makeStyles((theme) => ({
 
 interface HomeProps {
 	rooms: Array<Room>
-	active_room?: string,
+	active_room?: Room,
 }
 
 const mapStateToProps = (state: State) => ({
 	rooms: state.rooms,
-	active_room: state.active_room,
+	active_room: activeRoom(state),
 })
 
 const mapDispatchToProps = {
@@ -52,8 +52,7 @@ export default connect(
 	};
 
 	if (active_room) {
-		let room = rooms.find((room) => room.id == active_room);
-		return <Game room={room} />;
+		return <Game room={active_room} />;
 	} else {
 		return (
 			<div className={classes.root} >
@@ -62,7 +61,7 @@ export default connect(
 				</Button>
 				<List component='nav' >
 					{
-						rooms.map((room, index) => {
+						rooms.filter((room) => !room.peer).map((room, index) => {
 							return <ListItem key={room.id} button onClick={joinRoomCallback.bind(null, room.id)}>
 								<ListItemText primary={room.name} />
 							</ListItem>;

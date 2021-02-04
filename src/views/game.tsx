@@ -31,7 +31,8 @@ export default connect(
 		dispatch(newDebugCanvas(canvas))
 	}
 
-	const [debug, setDebug] = useState(process.env.NODE_ENV !== 'production');
+	// const [debug, setDebug] = useState(process.env.NODE_ENV !== 'production');
+	const [debug, setDebug] = useState(true);
 	const toggleDebug = (e: any) => {
 		setDebug(e.target.checked);
 	}

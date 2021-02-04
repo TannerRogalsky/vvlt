@@ -22,7 +22,6 @@ export enum ConnectionState {
 export interface State {
 	user_id?: string,
 	rooms: Array<Room>,
-	active_room?: string,
 	p2p_connection_state: ConnectionState,
 }
 
@@ -38,8 +37,8 @@ interface RemovedRoomPayload {
 	room_id: string,
 }
 
-interface JoinedRoomPayload {
-	room_id: string,	
+interface UpdatedRoomPayload {
+	room: Room,	
 }
 
 interface SetIDPayload {
@@ -49,7 +48,6 @@ interface SetIDPayload {
 const DEFAULT_STATE: State = {
 	user_id: null,
 	rooms: [],
-	active_room: null,
 	p2p_connection_state: ConnectionState.NotConnected,
 };
 
@@ -70,12 +68,17 @@ const rootSlice = createSlice({
 				...state, 
 				rooms: state.rooms.filter((room) => {
 					return room.id !== action.payload.room_id;
-				}), 
-				active_room: state.active_room == action.payload.room_id ? null : state.active_room
+				}),
 			}
 		},
-		JoinedRoom(state, action: PayloadAction<JoinedRoomPayload>) {
-			return { ...state, active_room: action.payload.room_id }
+		UpdatedRoom(state, action: PayloadAction<UpdatedRoomPayload>) {
+			return { ...state, rooms: state.rooms.map((room) => {
+				if (room.id === action.payload.room.id) {
+					return action.payload.room;
+				} else {
+					return room;
+				}
+			}) }
 		},
 		SetID(state, action: PayloadAction<SetIDPayload>) {
 			return { ...state, user_id: action.payload.user_id }
@@ -101,11 +104,18 @@ const rootSlice = createSlice({
 			};
 		});
 	}
-})
+});
+
+export const activeRoom = function activeRoom(state: State): Room|undefined {
+	if (state.user_id === null) {
+		return undefined;
+	}
+	return state.rooms.find((room) => room.host.id === state.user_id || room.peer?.id === state.user_id);
+}
 
 const middleware = [socketMiddleware, peerMiddleware, ...getDefaultMiddleware()];
 
-export const { AllRooms, CreatedRoom, RemovedRoom, JoinedRoom, SetID } = rootSlice.actions;
+export const { AllRooms, CreatedRoom, RemovedRoom, UpdatedRoom, SetID } = rootSlice.actions;
 export default configureStore({ 
 	reducer: rootSlice.reducer,
 	middleware: middleware,

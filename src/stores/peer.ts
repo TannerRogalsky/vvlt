@@ -8,7 +8,7 @@ import { State } from '../store';
 import player1ImageSrc from '../../../../../rust/vult/resources/images/playerShip1_red.png';
 import enemy1ImageSrc from '../../../../../rust/vult/resources/images/enemyBlack1.png';
 // @ts-ignore
-import levelDataPath from '../../../../../rust/vult/resources/levels/level1.lvl';
+import levelDataPath from '../../../../../rust/vult/resources/bin_levels/temp.bin';
 
 let levelData: null | Uint8Array = null;
 fetch(levelDataPath).then(r => r.arrayBuffer()).then(r => levelData = new Uint8Array(r));
@@ -134,6 +134,19 @@ const peerMiddleware: () => Middleware<{}, State> = () => {
           debugCtx.fillText(`Remote Frame: ${vvlt.estimated_remote_frame()}`, X, y += FONT_SIZE);
           debugCtx.fillText(`Synced Frame: ${vvlt.last_synchronized()}`, X, y += FONT_SIZE);
           debugCtx.fillText(`Hashes Sent: ${hashesSent}`, X, y += FONT_SIZE);
+          debugCtx.fillText(`Stocks (Local Player): ${vvlt.local_stock_count()}`, X, y += FONT_SIZE);
+          debugCtx.fillText(`Stocks (Remote Player): ${vvlt.remote_stock_count()}`, X, y += FONT_SIZE);
+
+          let gameState = "Running";
+          switch (vvlt.state()) {
+            case -1: 
+              gameState = "Lost";
+              break;
+            case 1: 
+              gameState = "Won!";
+              break;
+          }
+          debugCtx.fillText(`Game State: ${gameState}`, X, y += FONT_SIZE);
 
           debugRaf = requestAnimationFrame(debugLoop);
         }
